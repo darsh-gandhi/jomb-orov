@@ -1,0 +1,130 @@
+function dydt = f(t,y,z)
+
+% z = [b, piVH, piHV k, p, t_peak, a, LambdaF, LambdaC, rF, rA] 
+bite=z(1);
+piVH=z(2);
+piHV=z(3);
+k=z(4);
+p=z(5);
+t_peak=z(6);
+a=z(7);
+LambdaF=z(8);
+LambdaC=z(9);
+
+% Parameters from literature
+muA = 7*1/9125;    % 25 year sloth life expectancy
+muH = 7*1/26801.95; % 73.43 years amazonas (human) life expectancy (2022 BR census)
+muV = 7*1/25;      % 25 week midge lifespan
+gamma = 7*1/4.5; %4.5 week recovery
+
+
+% Initiate DE variables
+dydt = zeros(9,1);
+
+% Differential Equations -----------------------
+%y=reshape(y,[],8);
+SA = y(1);
+IA = y(2);
+SF = y(3);
+IF = y(4);
+SH = y(5);
+IH = y(6);
+SC = y(7);
+IC = y(8);
+IHC = y(9);
+
+%Precipdata
+%Normalized precipitation data
+precipData = [0.4528643113	0.5388131874	0.3626029337	0.1937340159	0.2988101152	0.2576278929	0.2260352204	0.242688757	0.2166257792	0.4208245113	0.3000935577	0.1654524679	0.08193460933	0.1691139284	0.1724167435	0.4086885127	0.3930246753	0.2359257	0.1047895424	0.3148334961	0.420935451	0.4035179125	0.3813075079	0.3985096796	0.2340377033	0.523321374	0.3779442822	0.5786127053	0.6197574238	0.7686275452	0.8618833974	0.7067981804	0.6158471349	0.5049413097	0.6107744492	0.8920679885	0.7200471696	0.7631654475	0.4932924129	0.6747123427	0.7037940491	0.5790355789	0.7694555509	0.8273047842	0.735913573	0.5503221744	0.9029677053	0.7086093727	0.5391208542	0.5537307641	0.571046795	0.6158258004	0.427956544];
+%Normalized data averaged over 2 weeks (week n and n-1)
+precipData_2weekavg = [0.5423113822	0.4958387493	0.4507080605	0.2781684748	0.2462720656	0.278219004	0.2418315567	0.2343619887	0.2296572681	0.3187251452	0.3604590345	0.2327730128	0.1236935386	0.1255242689	0.170765336	0.2905526281	0.400856594	0.3144751877	0.1703576212	0.2098115192	0.3678844736	0.4122266818	0.3924127102	0.3899085937	0.3162736915	0.3786795387	0.4506328281	0.4782784938	0.5991850645	0.6941924845	0.8152554713	0.7843407889	0.6613226577	0.5603942223	0.5578578795	0.7514212189	0.8060575791	0.7416063086	0.6282289302	0.5840023778	0.6892531959	0.641414814	0.6742455649	0.7983801676	0.7816091786	0.6431178737	0.7266449398	0.805788539	0.6238651135	0.5464258092	0.5623887795	0.5934362977	0.5218911722];
+%Normalized data averaged over 3 weeks (week n-1, n, and n+1)
+precipData_3weekavg = [0.5411453173	0.4514268108	0.3650500456	0.2850490216	0.2500573413	0.2608244095	0.2421172901	0.2284499189	0.2933796825	0.312514616	0.2954568456	0.182493545	0.1388336685	0.1411550938	0.2500730615	0.3247099772	0.3458796293	0.2445799726	0.2185162462	0.2801861632	0.3797622865	0.4019202905	0.3944450333	0.3379516303	0.3852895856	0.3784344532	0.4932927872	0.5254381371	0.6556658914	0.7500894555	0.779103041	0.7281762376	0.6091955417	0.5771876313	0.6692612492	0.7409632024	0.7917602019	0.65883501	0.643723401	0.6239329349	0.6525139902	0.6840950596	0.7252653047	0.7775579694	0.7045135105	0.7297344842	0.7206330841	0.7168993107	0.600486997	0.5546328044	0.5802011198	0.5382763798	0.4912677752];
+% Normalized data shifted in time
+precipDatashift = [0.08193460933	0.1691139284	0.1724167435	0.4086885127	0.3930246753	0.2359257	0.1047895424	0.3148334961	0.420935451	0.4035179125	0.3813075079	0.3985096796	0.2340377033	0.523321374	0.3779442822	0.5786127053	0.6197574238	0.7686275452	0.8618833974	0.7067981804	0.6158471349	0.5049413097	0.6107744492	0.8920679885	0.7200471696	0.7631654475	0.4932924129	0.6747123427	0.7037940491	0.5790355789	0.7694555509	0.8273047842	0.735913573	0.5503221744	0.9029677053	0.7086093727	0.5391208542	0.5537307641	0.571046795	0.6158258004	0.427956544	0.4362635497	0.4073752018	0.3070091007	0.2325384449	0.3136704254	0.3378481015	0.1651677076	0.164458951	0.240745515	0.1923019052	0.1801088647	0.1006025779];
+% Normalized 2 week averaged data shifted in time
+precipDatashift_2weekavg = [0.7003243752	0.6785468377	0.6245435526	0.5910522162	0.5423113822	0.4958387493	0.4507080605	0.2781684748	0.2462720656	0.278219004	0.2418315567	0.2343619887	0.2296572681	0.3187251452	0.3604590345	0.2327730128	0.1236935386	0.1255242689	0.170765336	0.2905526281	0.400856594	0.3144751877	0.1703576212	0.2098115192	0.3678844736	0.4122266818	0.3924127102	0.3899085937	0.3162736915	0.3786795387	0.4506328281	0.4782784938	0.5991850645	0.6941924845	0.8152554713	0.7843407889	0.6613226577	0.5603942223	0.5578578795	0.7514212189	0.8060575791	0.7416063086	0.6282289302	0.5840023778	0.6892531959	0.641414814	0.6742455649	0.7983801676	0.7816091786	0.6431178737	0.7266449398	0.805788539	0.6238651135];
+% Normalized 3 week averaged data shifted in time
+precipDatashift_3weekavg = [0.3650500456	0.2850490216	0.2500573413	0.2608244095	0.2421172901	0.2284499189	0.2933796825	0.312514616	0.2954568456	0.182493545	0.1388336685	0.1411550938	0.2500730615	0.3247099772	0.3458796293	0.2445799726	0.2185162462	0.2801861632	0.3797622865	0.4019202905	0.3944450333	0.3379516303	0.3852895856	0.3784344532	0.4932927872	0.5254381371	0.6556658914	0.7500894555	0.779103041	0.7281762376	0.6091955417	0.5771876313	0.6692612492	0.7409632024	0.7917602019	0.65883501	0.643723401	0.6239329349	0.6525139902	0.6840950596	0.7252653047	0.7775579694	0.7045135105	0.7297344842	0.7206330841	0.7168993107	0.600486997	0.5546328044	0.5802011198	0.5382763798	0.4933486313	0.4238650985	0.383549284];
+
+tspanP = 1:1:length(precipData);
+
+%Seasonality Functions
+exponential = exp(-((t-t_peak)/a)^2);
+basetwo = 2^(-((t-t_peak)/a)^2);
+cosine = 1/2*((1+a) + (1-a)*cos(2*pi*(t-t_peak)/tspanP(end)));
+
+denomAlp = (a-1)/(a+t_peak-2);
+tScaled = t/tspanP(end);
+betadist = (tScaled/denomAlp)^(a-1)*((1-tScaled)/(1-denomAlp))^(t_peak-1);
+
+% Precipitation functions
+% preciplinear = interp1(tspanP,precipData_3weekavg,t,'linear','extrap'); % 3-week average, no time shift, no thresholding
+% precipcubic = interp1(tspanP,precipData_3weekavg,t,'pchip','extrap'); % 3-week average, no time shift, no thresholding
+
+% preciplinear = interp1(tspanP,precipDatashift_3weekavg,t,'linear','extrap'); % 3-week average, time shift, no thresholding
+% precipcubic = interp1(tspanP,precipDatashift_3weekavg,t,'pchip','extrap'); % 3-week average, time shift, no thresholding
+
+% preciplinear = (4/3)*max(interp1(tspanP,precipDatashift_3weekavg,t,'linear','extrap')-(3/4),0); %3-week average, time shift, 75% thresholding
+% precipcubic = (4/3)*max(interp1(tspanP,precipDatashift_3weekavg,t,'linear','extrap')-(3/4),0); %3-week average, time shift, 75% thresholding
+
+preciplinear = 2*max(interp1(tspanP,precipDatashift_3weekavg,t,'linear','extrap')-(1/2),0); %threshold = 50%
+precipcubic = 2*max(interp1(tspanP,precipDatashift_3weekavg,t,'pchip','extrap')-(1/2),0); % threshold = 50%
+
+%Betas
+betaFA = bite*piVH*(k*(SA+IA))/(k*(SA+IA)+(1-p)*(SH+IH))*1;
+betaAF = bite*piHV*(k*(SA+IA))/(k*(SA+IA)+(1-p)*(SH+IH))*1;
+betaFH = bite*piVH*((1-p)*(SH+IH))/(k*(SA+IA)+(1-p)*(SH+IH))*1;
+betaHF = bite*piHV*((1-p)*(SH+IH))/(k*(SA+IA)+(1-p)*(SH+IH))*1;
+betaCH = bite*piVH*1;
+betaHC = bite*piHV*1;
+
+
+% Seasonal birth rates
+ReprF = LambdaF*precipcubic;
+ReprC = LambdaC*precipcubic;
+
+
+% Start DEs - seasonality in biting only
+% dSA/dt
+dydt(1) = muA*(SA+IA)-betaFA*IF*SA/(SA+IA)+gamma*IA-muA*SA;
+% dIA/dt
+dydt(2) = betaFA*IF*SA/(IA+SA)-gamma*IA-muA*IA;
+%dSF/dt
+dydt(3) = muV*(SF+IF)-(betaAF*IA/(SA+IA)+betaHF*IH/(IH+SH))*SF-muV*SF;
+% dIF/dt
+dydt(4) = (betaAF*IA/(IA+SA)+betaHF*IH/(IH+SH))*SF-muV*IF;
+%dSH/dt
+dydt(5) = muH*(IH+SH)-(betaFH*IF+betaCH*IC)*SH/(SH+IH)+gamma*IH-muH*SH;
+% dIH/dt
+dydt(6) = (betaFH*IF+betaCH*IC)*SH/(SH+IH)-gamma*IH-muH*IH;
+% dSC/dt 
+dydt(7) = muV*(SC+IC)-betaHC*IH/(IH+SH)*SC-muV*SC;
+% dIC/dt
+dydt(8) = betaHC*IH/(SH+IH)*SC-muV*IC;
+% dIHC/dt
+dydt(9) = (betaFH*IF+betaCH*IC)*SH/(SH+IH);
+
+% % Start DEs - seasonality in birth or both
+% % dSA/dt
+% dydt(1) = muA*(SA+IA)-betaFA*IF*SA/(SA+IA)+gamma*IA-muA*SA;
+% % dIA/dt
+% dydt(2) = betaFA*IF*SA/(IA+SA)-gamma*IA-muA*IA;
+% %dSF/dt
+% dydt(3) = ReprF-(betaAF*IA/(SA+IA)+betaHF*IH/(IH+SH))*SF-muV*SF;
+% % dIF/dt
+% dydt(4) = (betaAF*IA/(IA+SA)+betaHF*IH/(IH+SH))*SF-muV*IF;
+% %dSH/dt
+% dydt(5) = muH*(IH+SH)-(betaFH*IF+betaCH*IC)*SH/(SH+IH)+gamma*IH-muH*SH;
+% % dIH/dt
+% dydt(6) = (betaFH*IF+betaCH*IC)*SH/(SH+IH)-gamma*IH-muH*IH;
+% % dSC/dt 
+% dydt(7) = ReprC-betaHC*IH/(IH+SH)*SC-muV*SC;
+% % dIC/dt
+% dydt(8) = betaHC*IH/(SH+IH)*SC-muV*IC;
+% % dIHC/dt
+% dydt(9) = (betaFH*IF+betaCH*IC)*SH/(SH+IH);
+
+
+end
+
